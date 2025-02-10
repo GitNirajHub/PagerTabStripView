@@ -33,22 +33,25 @@ public struct PagerTabStripView<SelectionType, Content>: View where SelectionTyp
     private var swipeGestureEnabled: Binding<Bool>
     private var edgeSwipeGestureDisabled: Binding<HorizontalContainerEdge>
     private var selection: Binding<SelectionType>
+	private let isStickToBottom: Bool
     @StateObject private var selectionState: SelectionState<SelectionType>
 
     public init(swipeGestureEnabled: Binding<Bool> = .constant(true),
                 edgeSwipeGestureDisabled: Binding<HorizontalContainerEdge> = .constant([]),
+				isStickToBottom: Bool = false,
                 selection: Binding<SelectionType>, @ViewBuilder content: @escaping () -> Content) {
         self.swipeGestureEnabled = swipeGestureEnabled
         self.edgeSwipeGestureDisabled = edgeSwipeGestureDisabled
         self._selectionState = StateObject(wrappedValue: SelectionState(selection: selection.wrappedValue))
         self.selection = selection
+		self.isStickToBottom = isStickToBottom
         self.content = content
     }
 
     @MainActor public var body: some View {
         WrapperPagerTabStripView(swipeGestureEnabled: swipeGestureEnabled,
                                  edgeSwipeGestureDisabled: edgeSwipeGestureDisabled,
-                                 selection: selection, content: content)
+								 selection: selection, isStickToBottom: isStickToBottom, content: content)
     }
 }
 
@@ -56,6 +59,7 @@ extension PagerTabStripView where SelectionType == Int {
 
     public init(swipeGestureEnabled: Binding<Bool> = .constant(true),
                 edgeSwipeGestureDisabled: Binding<HorizontalContainerEdge> = .constant([]),
+				isStickToBottom: Bool = false,
                 @ViewBuilder content: @escaping () -> Content) {
         self.swipeGestureEnabled = swipeGestureEnabled
         self.edgeSwipeGestureDisabled = edgeSwipeGestureDisabled
@@ -66,6 +70,7 @@ extension PagerTabStripView where SelectionType == Int {
         }, set: {
             selectionState.selection = $0
         })
+		self.isStickToBottom = isStickToBottom
         self.content = content
     }
 }
@@ -80,13 +85,15 @@ private struct WrapperPagerTabStripView<SelectionType, Content>: View where Sele
     @Binding private var swipeGestureEnabled: Bool
     @Binding private var edgeSwipeGestureDisabled: HorizontalContainerEdge
     @State private var swipeOn: Bool = true
+	private let isStickToBottom: Bool
 
     public init(swipeGestureEnabled: Binding<Bool>,
                 edgeSwipeGestureDisabled: Binding<HorizontalContainerEdge>,
-                selection: Binding<SelectionType>, @ViewBuilder content: @escaping () -> Content) {
+                selection: Binding<SelectionType>, isStickToBottom: Bool, @ViewBuilder content: @escaping () -> Content) {
         self._swipeGestureEnabled = swipeGestureEnabled
         self._edgeSwipeGestureDisabled = edgeSwipeGestureDisabled
         self._selection = selection
+		self.isStickToBottom = isStickToBottom
         self.content = content()
     }
 
@@ -156,7 +163,7 @@ private struct WrapperPagerTabStripView<SelectionType, Content>: View where Sele
                 swipeOn = true
             }
         }
-        .modifier(NavBarModifier(selection: $selection))
+		.modifier(NavBarModifier(selection: $selection, isStickToBottom: isStickToBottom))
         .environmentObject(pagerSettings)
         .clipped()
     }
